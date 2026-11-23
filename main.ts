@@ -8,7 +8,7 @@
 // worthy of a badge and a recovery period. One sentence, one gadget,
 // one concrete behaviour, no wasted words.
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const LINE =
   "My fitness tracker gave me a badge for walking to the fridge and then suggested I rest, as if opening it were a workout.";
@@ -25,6 +25,9 @@ if (codePoints < 1 || codePoints > 200) {
 if (LINE.trim() === "") {
   throw new Error("line must not be blank");
 }
+if (LINE !== LINE.trim()) {
+  throw new Error("line must not have leading or trailing whitespace");
+}
 const terminalPeriods = (LINE.match(/\./g) ?? []).length;
 if (terminalPeriods !== 1 || !LINE.endsWith(".")) {
   throw new Error("line must be exactly one sentence ending in a single period");
@@ -40,3 +43,10 @@ const OUTPUT_PATH = "/output/entry.txt";
 
 mkdirSync("/output", { recursive: true });
 writeFileSync(OUTPUT_PATH, LINE + "\n", "utf8");
+
+// Read the file back: a write that silently lands truncated or empty
+// must fail loudly here, never ship as the entry.
+const written = readFileSync(OUTPUT_PATH, "utf8");
+if (written !== LINE + "\n") {
+  throw new Error("entry.txt does not match the roast line after writing");
+}
